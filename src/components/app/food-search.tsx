@@ -21,9 +21,8 @@ interface SearchResult {
 export function FoodSearch() {
   const [query, setQuery] = useState("pollo");
   const [grams, setGrams] = useState(150);
-  const initialResults = findSeedFoods("pollo").map(toResult);
-  const [selected, setSelected] = useState<SearchResult | null>(initialResults[0] ?? null);
-  const [results, setResults] = useState<SearchResult[]>(initialResults);
+  const [results, setResults] = useState<SearchResult[]>(() => initialFoodResults());
+  const [selected, setSelected] = useState<SearchResult | null>(() => initialFoodResults()[0] ?? null);
   const [status, setStatus] = useState<string | null>(null);
 
   async function runSearch(value = query) {
@@ -115,6 +114,10 @@ export function FoodSearch() {
       {status ? <p className="text-sm font-medium text-[#607369]">{status}</p> : null}
     </div>
   );
+}
+
+function initialFoodResults() {
+  return findSeedFoods("pollo").map(toResult);
 }
 
 function toResult(food: ReturnType<typeof findSeedFoods>[number]): SearchResult {
