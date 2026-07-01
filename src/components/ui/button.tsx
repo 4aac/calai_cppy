@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LoaderCircle } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 
 import { cn } from "@/lib/ui";
@@ -15,25 +16,30 @@ const variants: Record<ButtonVariant, string> = {
 interface ButtonProps extends ComponentProps<"button"> {
   variant?: ButtonVariant;
   icon?: ReactNode;
+  loading?: boolean;
 }
 
 export function Button({
   className,
   variant = "primary",
   icon,
+  loading = false,
   children,
+  disabled,
   ...props
 }: ButtonProps) {
   return (
     <button
+      aria-busy={loading || undefined}
       className={cn(
         "inline-flex h-12 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-55",
         variants[variant],
         className,
       )}
+      disabled={disabled || loading}
       {...props}
     >
-      {icon}
+      {loading ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : icon}
       {children}
     </button>
   );

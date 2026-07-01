@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Lock, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -14,7 +14,10 @@ export function AuthForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function onSubmit(formData: FormData) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
     setPending(true);
     setError(null);
 
@@ -52,16 +55,21 @@ export function AuthForm() {
   }
 
   return (
-    <form action={onSubmit} className="grid gap-4">
+    <form onSubmit={onSubmit} className="grid gap-4">
       <Field label="Email" name="email" type="email" placeholder="tu@email.com" required />
       <Field label="Contrasena" name="password" type="password" placeholder="Minimo 6 caracteres" required />
       {error ? <p className="rounded-xl bg-[#fff2ef] px-4 py-3 text-sm font-medium text-[#b23620]">{error}</p> : null}
-      <Button disabled={pending} icon={mode === "login" ? <Lock className="h-4 w-4" /> : <Mail className="h-4 w-4" />}>
+      <Button
+        type="submit"
+        loading={pending}
+        icon={mode === "login" ? <Lock className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
+      >
         {pending ? "Procesando" : mode === "login" ? "Entrar" : "Crear cuenta"}
       </Button>
       <button
         type="button"
         onClick={() => setMode(mode === "login" ? "signup" : "login")}
+        disabled={pending}
         className="h-11 text-sm font-semibold text-[#1f9d62]"
       >
         {mode === "login" ? "Crear cuenta nueva" : "Ya tengo cuenta"}

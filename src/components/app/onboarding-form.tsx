@@ -13,6 +13,7 @@ import type { ProfileTargetsInput } from "@/lib/types";
 export function OnboardingForm() {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const [form, setForm] = useState<ProfileTargetsInput>({
     age: 28,
     sex: "male",
@@ -31,19 +32,24 @@ export function OnboardingForm() {
       return;
     }
 
-    const response = await fetch("/api/onboarding", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    setPending(true);
+    try {
+      const response = await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    if (!response.ok) {
-      setMessage("Guarda las claves de Supabase para persistir el perfil. Estos objetivos ya estan calculados localmente.");
-      return;
+      if (!response.ok) {
+        setMessage("Guarda las claves de Supabase para persistir el perfil. Estos objetivos ya estan calculados localmente.");
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    } finally {
+      setPending(false);
     }
-
-    router.push("/");
-    router.refresh();
   }
 
   return (
@@ -76,8 +82,8 @@ export function OnboardingForm() {
         </p>
       </section>
       {message ? <p className="rounded-xl bg-[#fff9eb] p-3 text-sm font-medium text-[#8b6415]">{message}</p> : null}
-      <Button onClick={submit} icon={<Check className="h-4 w-4" />}>
-        Continuar
+      <Button onClick={submit} loading={pending} icon={<Check className="h-4 w-4" />}>
+        {pending ? "Guardando" : "Continuar"}
       </Button>
     </div>
   );

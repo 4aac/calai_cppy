@@ -30,6 +30,7 @@ export function CodeScanner() {
   const [grams, setGrams] = useState(125);
   const [result, setResult] = useState<ProductResult | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<"camera" | "lookup" | "save" | null>(null);
 
   useEffect(() => {
     return () => controlsRef.current?.stop();
@@ -41,6 +42,7 @@ export function CodeScanner() {
       return;
     }
 
+    setPendingAction("camera");
     setStatus("Abriendo camara");
     try {
       const reader = new BrowserMultiFormatReader();
@@ -52,12 +54,15 @@ export function CodeScanner() {
             const value = scanResult.getText();
             setCode(value);
             controlsRef.current?.stop();
-            lookup(value);
+            void lookup(value);
           }
         },
       );
+      setStatus("Camara activa");
     } catch {
       setStatus("No se pudo abrir la camara. Revisa permisos o introduce el codigo manualmente.");
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -68,16 +73,21 @@ export function CodeScanner() {
       return;
     }
 
+    setPendingAction("lookup");
     setStatus("Buscando producto");
-    const response = await fetch("/api/scan-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: value }),
-    });
-    const payload = await response.json().catch(() => null);
-    setResult(payload);
-    setStatus(response.ok ? null : payload?.error ?? "No se pudo consultar el codigo");
-    if (payload?.product?.servingSizeG) setGrams(payload.product.servingSizeG);
+    try {
+      const response = await fetch("/api/scan-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: value }),
+      });
+      const payload = await response.json().catch(() => null);
+      setResult(payload);
+      setStatus(response.ok ? null : payload?.error ?? "No se pudo consultar el codigo");
+      if (payload?.product?.servingSizeG) setGrams(payload.product.servingSizeG);
+    } finally {
+      setPendingAction(null);
+    }
   }
 
   async function saveProduct() {
@@ -87,31 +97,37 @@ export function CodeScanner() {
       return;
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const response = await fetch("/api/meals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mealType: "snack",
-        date: today,
-        title: result.product.name,
-        items: [
-          {
-            productId: result.product.id,
-            name: result.product.name,
-            grams,
-            kcalPer100g: result.product.kcalPer100g,
-            proteinPer100g: result.product.proteinPer100g,
-            carbsPer100g: result.product.carbsPer100g,
-            fatPer100g: result.product.fatPer100g,
-            confidence: "high",
-            source: "barcode",
-          },
-        ],
-      }),
-    });
+    setPendingAction("save");
+    setStatus(null);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const response = await fetch("/api/meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mealType: "snack",
+          date: today,
+          title: result.product.name,
+          items: [
+            {
+              productId: result.product.id,
+              name: result.product.name,
+              grams,
+              kcalPer100g: result.product.kcalPer100g,
+              proteinPer100g: result.product.proteinPer100g,
+              carbsPer100g: result.product.carbsPer100g,
+              fatPer100g: result.product.fatPer100g,
+              confidence: "high",
+              source: "barcode",
+            },
+          ],
+        }),
+      });
 
-    setStatus(response.ok ? "Producto guardado" : "Inicia sesion y configura Supabase para guardar.");
+      setStatus(response.ok ? "Producto guardado" : "Inicia sesion y configura Supabase para guardar.");
+    } finally {
+      setPendingAction(null);
+    }
   }
 
   return (
@@ -121,13 +137,25 @@ export function CodeScanner() {
       </section>
 
       <div className="grid gap-3">
-        <Button onClick={startCamera} icon={<Camera className="h-4 w-4" />}>
-          Escanear codigo
+        <Button
+          onClick={startCamera}
+          loading={pendingAction === "camera"}
+          disabled={pendingAction !== null}
+          icon={<Camera className="h-4 w-4" />}
+        >
+          {pendingAction === "camera" ? "Abriendo" : "Escanear codigo"}
         </Button>
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <Field label="EAN / QR" value={code} onChange={(event) => setCode(event.target.value)} placeholder="841..." />
-          <Button type="button" variant="secondary" onClick={() => lookup()} icon={<Barcode className="h-4 w-4" />}>
-            Buscar
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => lookup()}
+            loading={pendingAction === "lookup"}
+            disabled={pendingAction !== null}
+            icon={<Barcode className="h-4 w-4" />}
+          >
+            {pendingAction === "lookup" ? "Buscando" : "Buscar"}
           </Button>
         </div>
       </div>
@@ -146,8 +174,13 @@ export function CodeScanner() {
             <Metric label="grasas" value={result.product.fatPer100g} />
           </div>
           <Field label="Cantidad consumida" type="number" value={grams} onChange={(event) => setGrams(Number(event.target.value))} />
-          <Button onClick={saveProduct} icon={<Save className="h-4 w-4" />}>
-            Guardar
+          <Button
+            onClick={saveProduct}
+            loading={pendingAction === "save"}
+            disabled={pendingAction !== null}
+            icon={<Save className="h-4 w-4" />}
+          >
+            {pendingAction === "save" ? "Guardando" : "Guardar"}
           </Button>
         </section>
       ) : result ? (

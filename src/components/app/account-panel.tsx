@@ -58,7 +58,7 @@ export function AccountPanel({ email }: AccountPanelProps) {
         </div>
       </div>
       {message ? <p className="text-sm font-medium text-[#b23620]">{message}</p> : null}
-      <Button type="button" variant="secondary" onClick={logout} disabled={pending} icon={<LogOut className="h-4 w-4" />}>
+      <Button type="button" variant="secondary" onClick={logout} loading={pending} icon={<LogOut className="h-4 w-4" />}>
         {pending ? "Cerrando" : "Cerrar sesion"}
       </Button>
     </section>

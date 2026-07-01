@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Camera, Save, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,15 @@ export function PhotoAnalyzer() {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [mealName, setMealName] = useState("Resultado");
   const [status, setStatus] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"analyze" | "save" | null>(null);
 
   const total = useMemo(() => calculateTotals(items), [items]);
+  const pending = pendingAction !== null;
 
-  async function analyze(formData: FormData) {
+  async function analyze(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
     const image = formData.get("image");
     if (!(image instanceof File) || image.size === 0) {
       setStatus("Selecciona una foto para analizar una comida real.");
@@ -30,25 +34,28 @@ export function PhotoAnalyzer() {
       return;
     }
 
-    setPending(true);
+    setPendingAction("analyze");
     setStatus(null);
-    const response = await fetch("/api/analyze-photo", {
-      method: "POST",
-      body: formData,
-    });
-    setPending(false);
+    try {
+      const response = await fetch("/api/analyze-photo", {
+        method: "POST",
+        body: formData,
+      });
 
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload) {
-      setStatus(payload?.error ?? "No se pudo analizar la imagen. Revisa API keys y sesion.");
-      return;
-    }
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload) {
+        setStatus(payload?.error ?? "No se pudo analizar la imagen. Revisa API keys y sesion.");
+        return;
+      }
 
-    setMealName(payload.mealName ?? "Resultado");
-    setItems(payload.items);
-    setWarnings(payload.warnings ?? []);
-    if (!payload.items?.length) {
-      setStatus("La IA no encontro alimentos con base nutricional real en Supabase.");
+      setMealName(payload.mealName ?? "Resultado");
+      setItems(payload.items);
+      setWarnings(payload.warnings ?? []);
+      if (!payload.items?.length) {
+        setStatus("La IA no encontro alimentos con base nutricional real en Supabase.");
+      }
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -80,44 +87,53 @@ export function PhotoAnalyzer() {
       return;
     }
 
-    setPending(true);
+    setPendingAction("save");
     setStatus(null);
     const today = new Date().toISOString().slice(0, 10);
-    const response = await fetch("/api/meals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mealType: "lunch",
-        date: today,
-        title: mealName,
-        items: items.map((item) => ({
-          name: item.name,
-          grams: item.grams,
-          kcalPer100g: (item.kcal / item.grams) * 100,
-          proteinPer100g: (item.protein / item.grams) * 100,
-          carbsPer100g: (item.carbs / item.grams) * 100,
-          fatPer100g: (item.fat / item.grams) * 100,
-          confidence: item.confidence,
-          source: item.source,
-          foodId: item.foodId ?? null,
-          productId: item.productId ?? null,
-        })),
-      }),
-    });
-    setPending(false);
-    setStatus(response.ok ? "Comida guardada" : "Inicia sesion y configura Supabase para guardar.");
+    try {
+      const response = await fetch("/api/meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mealType: "lunch",
+          date: today,
+          title: mealName,
+          items: items.map((item) => ({
+            name: item.name,
+            grams: item.grams,
+            kcalPer100g: (item.kcal / item.grams) * 100,
+            proteinPer100g: (item.protein / item.grams) * 100,
+            carbsPer100g: (item.carbs / item.grams) * 100,
+            fatPer100g: (item.fat / item.grams) * 100,
+            confidence: item.confidence,
+            source: item.source,
+            foodId: item.foodId ?? null,
+            productId: item.productId ?? null,
+          })),
+        }),
+      });
+
+      setStatus(response.ok ? "Comida guardada" : "Inicia sesion y configura Supabase para guardar.");
+    } finally {
+      setPendingAction(null);
+    }
   }
 
   return (
     <div className="grid gap-5">
-      <form action={analyze} className="grid gap-3">
+      <form onSubmit={analyze} className="grid gap-3">
         <label className="grid min-h-36 place-items-center rounded-3xl border border-dashed border-[#cddbd3] bg-[#f8fbf9] p-5 text-center">
           <Camera className="h-8 w-8 text-[#1f9d62]" />
           <span className="mt-3 text-sm font-semibold text-[#53645b]">Hacer foto o subir imagen</span>
           <input name="image" type="file" accept="image/*" capture="environment" className="sr-only" />
         </label>
-        <Button disabled={pending} icon={<SlidersHorizontal className="h-4 w-4" />}>
-          {pending ? "Analizando" : "Analizar foto"}
+        <Button
+          type="submit"
+          loading={pendingAction === "analyze"}
+          disabled={pending}
+          icon={<SlidersHorizontal className="h-4 w-4" />}
+        >
+          {pendingAction === "analyze" ? "Analizando" : "Analizar foto"}
         </Button>
       </form>
 
@@ -163,8 +179,8 @@ export function PhotoAnalyzer() {
           </p>
         ))}
 
-        <Button onClick={saveMeal} disabled={pending} icon={<Save className="h-4 w-4" />}>
-          Guardar comida
+        <Button onClick={saveMeal} loading={pendingAction === "save"} disabled={pending} icon={<Save className="h-4 w-4" />}>
+          {pendingAction === "save" ? "Guardando" : "Guardar comida"}
         </Button>
       </section>
 

@@ -24,6 +24,7 @@ export function FoodSearch() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selected, setSelected] = useState<SearchResult | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<"search" | "save" | null>(null);
 
   async function runSearch(value = query) {
     if (!hasPublicSupabaseEnv()) {
@@ -33,19 +34,25 @@ export function FoodSearch() {
       return;
     }
 
-    const response = await fetch(`/api/search-food?q=${encodeURIComponent(value)}`);
-    const payload = await response.json().catch(() => null);
+    setPendingAction("search");
+    setStatus(null);
+    try {
+      const response = await fetch(`/api/search-food?q=${encodeURIComponent(value)}`);
+      const payload = await response.json().catch(() => null);
 
-    if (response.ok && payload?.results) {
-      setResults(payload.results);
-      setSelected(payload.results[0] ?? null);
-      setStatus(payload.results.length ? null : "No hay alimentos reales para esa busqueda.");
-      return;
+      if (response.ok && payload?.results) {
+        setResults(payload.results);
+        setSelected(payload.results[0] ?? null);
+        setStatus(payload.results.length ? null : "No hay alimentos reales para esa busqueda.");
+        return;
+      }
+
+      setResults([]);
+      setSelected(null);
+      setStatus(payload?.error ?? "No se pudo buscar en la base real.");
+    } finally {
+      setPendingAction(null);
     }
-
-    setResults([]);
-    setSelected(null);
-    setStatus(payload?.error ?? "No se pudo buscar en la base real.");
   }
 
   async function saveFood() {
@@ -55,39 +62,51 @@ export function FoodSearch() {
       return;
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const response = await fetch("/api/meals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mealType: "lunch",
-        date: today,
-        title: selected.name,
-        items: [
-          {
-            foodId: selected.id,
-            name: selected.name,
-            grams,
-            kcalPer100g: selected.kcalPer100g,
-            proteinPer100g: selected.proteinPer100g,
-            carbsPer100g: selected.carbsPer100g,
-            fatPer100g: selected.fatPer100g,
-            confidence: "high",
-            source: "search",
-          },
-        ],
-      }),
-    });
+    setPendingAction("save");
+    setStatus(null);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const response = await fetch("/api/meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mealType: "lunch",
+          date: today,
+          title: selected.name,
+          items: [
+            {
+              foodId: selected.id,
+              name: selected.name,
+              grams,
+              kcalPer100g: selected.kcalPer100g,
+              proteinPer100g: selected.proteinPer100g,
+              carbsPer100g: selected.carbsPer100g,
+              fatPer100g: selected.fatPer100g,
+              confidence: "high",
+              source: "search",
+            },
+          ],
+        }),
+      });
 
-    setStatus(response.ok ? "Comida guardada" : "Inicia sesion y configura Supabase para guardar.");
+      setStatus(response.ok ? "Comida guardada" : "Inicia sesion y configura Supabase para guardar.");
+    } finally {
+      setPendingAction(null);
+    }
   }
 
   return (
     <div className="grid gap-5">
       <div className="grid grid-cols-[1fr_auto] gap-2">
         <Field label="Buscar alimento" value={query} onChange={(event) => setQuery(event.target.value)} />
-        <Button type="button" onClick={() => runSearch()} icon={<Search className="h-4 w-4" />}>
-          Buscar
+        <Button
+          type="button"
+          onClick={() => runSearch()}
+          loading={pendingAction === "search"}
+          disabled={pendingAction !== null}
+          icon={<Search className="h-4 w-4" />}
+        >
+          {pendingAction === "search" ? "Buscando" : "Buscar"}
         </Button>
       </div>
 
@@ -123,8 +142,13 @@ export function FoodSearch() {
             <h2 className="mt-1 text-2xl font-semibold">{selected.name}</h2>
           </div>
           <Field label="Gramos" type="number" value={grams} onChange={(event) => setGrams(Number(event.target.value))} />
-          <Button onClick={saveFood} icon={<Save className="h-4 w-4" />}>
-            Guardar
+          <Button
+            onClick={saveFood}
+            loading={pendingAction === "save"}
+            disabled={pendingAction !== null}
+            icon={<Save className="h-4 w-4" />}
+          >
+            {pendingAction === "save" ? "Guardando" : "Guardar"}
           </Button>
         </section>
       ) : null}
