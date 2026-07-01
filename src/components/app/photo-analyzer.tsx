@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
-import { Camera, Save, SlidersHorizontal } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { Camera, LoaderCircle, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -15,27 +15,50 @@ export function PhotoAnalyzer() {
   const [mealName, setMealName] = useState("Resultado");
   const [status, setStatus] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<"analyze" | "save" | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const analyzeRequestRef = useRef(0);
 
   const total = useMemo(() => calculateTotals(items), [items]);
   const pending = pendingAction !== null;
 
-  async function analyze(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
-    const formData = new FormData(event.currentTarget);
-    const image = formData.get("image");
-    if (!(image instanceof File) || image.size === 0) {
+  async function onPhotoSelected(event: ChangeEvent<HTMLInputElement>) {
+    const image = event.currentTarget.files?.[0];
+    event.currentTarget.value = "";
+
+    if (!image || image.size === 0) {
       setStatus("Selecciona una foto para analizar una comida real.");
       return;
     }
 
+    setPreviewUrl(URL.createObjectURL(image));
+    await analyzeImage(image);
+  }
+
+  async function analyzeImage(image: File) {
     if (!hasPublicSupabaseEnv()) {
       setStatus("Configura Supabase y Gemini para analizar fotos reales.");
       return;
     }
 
+    const requestId = analyzeRequestRef.current + 1;
+    analyzeRequestRef.current = requestId;
+    const formData = new FormData();
+    formData.append("image", image);
+
     setPendingAction("analyze");
-    setStatus(null);
+    setStatus("Analizando foto...");
+    setItems([]);
+    setWarnings([]);
+    setMealName("Resultado");
+
     try {
       const response = await fetch("/api/analyze-photo", {
         method: "POST",
@@ -43,6 +66,10 @@ export function PhotoAnalyzer() {
       });
 
       const payload = await response.json().catch(() => null);
+      if (analyzeRequestRef.current !== requestId) {
+        return;
+      }
+
       if (!response.ok || !payload) {
         setStatus(payload?.error ?? "No se pudo analizar la imagen. Revisa API keys y sesion.");
         return;
@@ -53,9 +80,13 @@ export function PhotoAnalyzer() {
       setWarnings(payload.warnings ?? []);
       if (!payload.items?.length) {
         setStatus("No se pudo extraer ningun alimento de la foto.");
+      } else {
+        setStatus(null);
       }
     } finally {
-      setPendingAction(null);
+      if (analyzeRequestRef.current === requestId) {
+        setPendingAction(null);
+      }
     }
   }
 
@@ -121,21 +152,42 @@ export function PhotoAnalyzer() {
 
   return (
     <div className="grid gap-5">
-      <form onSubmit={analyze} className="grid gap-3">
-        <label className="grid min-h-36 place-items-center rounded-3xl border border-dashed border-[#cddbd3] bg-[#f8fbf9] p-5 text-center">
-          <Camera className="h-8 w-8 text-[#1f9d62]" />
-          <span className="mt-3 text-sm font-semibold text-[#53645b]">Hacer foto o subir imagen</span>
-          <input name="image" type="file" accept="image/*" capture="environment" className="sr-only" />
-        </label>
-        <Button
-          type="submit"
-          loading={pendingAction === "analyze"}
-          disabled={pending}
-          icon={<SlidersHorizontal className="h-4 w-4" />}
-        >
-          {pendingAction === "analyze" ? "Analizando" : "Analizar foto"}
-        </Button>
-      </form>
+      <label className="relative grid min-h-44 cursor-pointer place-items-center overflow-hidden rounded-3xl border border-dashed border-[#cddbd3] bg-[#f8fbf9] text-center transition hover:border-[#1f9d62]">
+        {previewUrl ? (
+          // Blob previews are local browser URLs; Next Image cannot optimize them.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={previewUrl} alt="Foto seleccionada" className="h-full min-h-44 w-full object-cover" />
+        ) : (
+          <div className="p-5">
+            <Camera className="mx-auto h-8 w-8 text-[#1f9d62]" />
+            <span className="mt-3 block text-sm font-semibold text-[#53645b]">
+              Hacer foto o subir imagen
+            </span>
+          </div>
+        )}
+
+        {pendingAction === "analyze" ? (
+          <span className="absolute inset-0 grid place-items-center bg-[#101a14]/55 text-white">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#101a14]/80 px-4 py-2 text-sm font-semibold">
+              <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+              Analizando foto
+            </span>
+          </span>
+        ) : previewUrl ? (
+          <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-white/95 px-4 py-2 text-xs font-semibold text-[#1f9d62] shadow-sm">
+            Cambiar foto
+          </span>
+        ) : null}
+
+        <input
+          name="image"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="sr-only"
+          onChange={onPhotoSelected}
+        />
+      </label>
 
       <section className="grid gap-4 rounded-3xl border border-[#edf1ee] p-4">
         <div className="flex items-start justify-between">
