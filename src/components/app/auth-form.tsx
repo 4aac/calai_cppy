@@ -20,7 +20,7 @@ export function AuthForm() {
 
     if (!hasPublicSupabaseEnv()) {
       setPending(false);
-      setError("Configura Supabase en .env.local para usar autenticacion real.");
+      setError("Configura Supabase en .env para usar autenticacion real.");
       return;
     }
 

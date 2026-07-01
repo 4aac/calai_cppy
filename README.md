@@ -12,7 +12,7 @@ MVP PWA movil-first para registrar calorias y macros desde foto, codigo de barra
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env.local` y rellena:
+Rellena el archivo `.env`:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
@@ -30,7 +30,7 @@ OPEN_FOOD_FACTS_USER_AGENT=CalAI Copy MVP - contact: you@example.com
 1. Crea un proyecto Supabase.
 2. Ejecuta `supabase/migrations/001_initial_schema.sql` en el SQL editor o con Supabase CLI.
 3. Habilita email/password en Auth.
-4. Copia URL, publishable key y service role key al `.env.local` y a Vercel.
+4. Copia URL, publishable key y service role key al `.env` y a Vercel.
 
 La migracion crea `profiles`, `foods`, `branded_products`, `meals`, `meal_items`, `user_corrections` y `scan_history`, activa RLS y seed de alimentos frecuentes.
 
