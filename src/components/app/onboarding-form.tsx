@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Field, SelectField } from "@/components/ui/field";
+import { hasPublicSupabaseEnv } from "@/lib/client-env";
 import { calculateTargets } from "@/lib/nutrition";
 import type { ProfileTargetsInput } from "@/lib/types";
 
@@ -25,6 +26,11 @@ export function OnboardingForm() {
 
   async function submit() {
     setMessage(null);
+    if (!hasPublicSupabaseEnv()) {
+      setMessage("Guarda las claves de Supabase para persistir el perfil. Estos objetivos ya estan calculados localmente.");
+      return;
+    }
+
     const response = await fetch("/api/onboarding", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -66,7 +72,7 @@ export function OnboardingForm() {
         <p className="text-sm font-semibold text-[#587064]">Objetivo sugerido</p>
         <div className="mt-2 text-3xl font-semibold">{targets.kcal} kcal</div>
         <p className="mt-2 text-sm text-[#6d7d74]">
-          {targets.protein} g proteina · {targets.carbs} g carbs · {targets.fat} g grasas
+          {targets.protein} g proteina - {targets.carbs} g carbs - {targets.fat} g grasas
         </p>
       </section>
       {message ? <p className="rounded-xl bg-[#fff9eb] p-3 text-sm font-medium text-[#8b6415]">{message}</p> : null}

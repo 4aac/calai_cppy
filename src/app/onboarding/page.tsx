@@ -1,7 +1,10 @@
 import { MobileShell } from "@/components/app/mobile-shell";
 import { OnboardingForm } from "@/components/app/onboarding-form";
+import { protectPage } from "@/lib/supabase/page-auth";
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  await protectPage();
+
   return (
     <MobileShell>
       <div className="grid gap-6">

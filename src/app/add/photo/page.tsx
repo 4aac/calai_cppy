@@ -1,7 +1,10 @@
 import { PhotoAnalyzer } from "@/components/app/photo-analyzer";
 import { MobileShell } from "@/components/app/mobile-shell";
+import { protectPage } from "@/lib/supabase/page-auth";
 
-export default function PhotoPage() {
+export default async function PhotoPage() {
+  await protectPage();
+
   return (
     <MobileShell>
       <div className="grid gap-6">

@@ -5,6 +5,7 @@ import { Plus, Save, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { hasPublicSupabaseEnv } from "@/lib/client-env";
 import { findSeedFoods } from "@/lib/sample-data";
 
 interface SearchResult {
@@ -26,6 +27,14 @@ export function FoodSearch() {
   const [status, setStatus] = useState<string | null>(null);
 
   async function runSearch(value = query) {
+    if (!hasPublicSupabaseEnv()) {
+      const fallback = findSeedFoods(value).map(toResult);
+      setResults(fallback);
+      setSelected(fallback[0] ?? null);
+      setStatus("Usando base local. Configura Supabase para busqueda persistente.");
+      return;
+    }
+
     const response = await fetch(`/api/search-food?q=${encodeURIComponent(value)}`);
     const payload = await response.json().catch(() => null);
 
@@ -42,6 +51,11 @@ export function FoodSearch() {
 
   async function saveFood() {
     if (!selected) return;
+    if (!hasPublicSupabaseEnv()) {
+      setStatus("Configura Supabase para guardar comidas.");
+      return;
+    }
+
     const today = new Date().toISOString().slice(0, 10);
     const response = await fetch("/api/meals", {
       method: "POST",

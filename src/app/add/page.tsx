@@ -2,6 +2,7 @@ import { Barcode, Camera, Edit3, Search } from "lucide-react";
 
 import { MobileShell } from "@/components/app/mobile-shell";
 import { ButtonLink } from "@/components/ui/button";
+import { protectPage } from "@/lib/supabase/page-auth";
 
 const actions = [
   {
@@ -30,7 +31,9 @@ const actions = [
   },
 ];
 
-export default function AddPage() {
+export default async function AddPage() {
+  await protectPage();
+
   return (
     <MobileShell>
       <div className="grid gap-7">

@@ -1,7 +1,10 @@
 import { CodeScanner } from "@/components/app/code-scanner";
 import { MobileShell } from "@/components/app/mobile-shell";
+import { protectPage } from "@/lib/supabase/page-auth";
 
-export default function CodePage() {
+export default async function CodePage() {
+  await protectPage();
+
   return (
     <MobileShell>
       <div className="grid gap-6">

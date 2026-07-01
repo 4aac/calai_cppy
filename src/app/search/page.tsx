@@ -1,7 +1,10 @@
 import { FoodSearch } from "@/components/app/food-search";
 import { MobileShell } from "@/components/app/mobile-shell";
+import { protectPage } from "@/lib/supabase/page-auth";
 
-export default function SearchPage() {
+export default async function SearchPage() {
+  await protectPage();
+
   return (
     <MobileShell>
       <div className="grid gap-6">

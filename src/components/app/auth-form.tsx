@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { hasPublicSupabaseEnv } from "@/lib/client-env";
 
 export function AuthForm() {
   const router = useRouter();
@@ -16,6 +17,12 @@ export function AuthForm() {
   async function onSubmit(formData: FormData) {
     setPending(true);
     setError(null);
+
+    if (!hasPublicSupabaseEnv()) {
+      setPending(false);
+      setError("Configura Supabase en .env.local para usar autenticacion real.");
+      return;
+    }
 
     const response = await fetch(`/api/auth/${mode}`, {
       method: "POST",

@@ -2,8 +2,11 @@ import Link from "next/link";
 
 import { MobileShell } from "@/components/app/mobile-shell";
 import { demoSummary } from "@/lib/sample-data";
+import { protectPage } from "@/lib/supabase/page-auth";
 
 export default async function MealPage({ params }: { params: Promise<{ id: string }> }) {
+  await protectPage();
+
   const { id } = await params;
   const meal = demoSummary.meals.find((item) => item.id === id) ?? demoSummary.meals[1];
 
@@ -24,7 +27,7 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold">{item.name}</p>
-                  <p className="mt-1 text-sm text-[#708078]">{item.grams} g · {item.confidence}</p>
+                  <p className="mt-1 text-sm text-[#708078]">{item.grams} g - {item.confidence}</p>
                 </div>
                 <p className="text-sm font-semibold">{item.kcal} kcal</p>
               </div>

@@ -1,5 +1,12 @@
 import type { FoodRecord } from "@/lib/types";
 
+export function sanitizeFoodSearchQuery(query: string) {
+  return query
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function foodRecordFromSupabase(row: {
   id?: string;
   name: string;

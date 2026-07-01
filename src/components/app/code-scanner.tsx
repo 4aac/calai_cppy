@@ -6,6 +6,7 @@ import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser"
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { hasPublicSupabaseEnv } from "@/lib/client-env";
 
 interface ProductResult {
   status: "found" | "not_found" | "unsupported_qr";
@@ -41,23 +42,32 @@ export function CodeScanner() {
     }
 
     setStatus("Abriendo camara");
-    const reader = new BrowserMultiFormatReader();
-    controlsRef.current = await reader.decodeFromVideoDevice(
-      undefined,
-      videoRef.current,
-      (scanResult) => {
-        if (scanResult) {
-          const value = scanResult.getText();
-          setCode(value);
-          controlsRef.current?.stop();
-          lookup(value);
-        }
-      },
-    );
+    try {
+      const reader = new BrowserMultiFormatReader();
+      controlsRef.current = await reader.decodeFromVideoDevice(
+        undefined,
+        videoRef.current,
+        (scanResult) => {
+          if (scanResult) {
+            const value = scanResult.getText();
+            setCode(value);
+            controlsRef.current?.stop();
+            lookup(value);
+          }
+        },
+      );
+    } catch {
+      setStatus("No se pudo abrir la camara. Revisa permisos o introduce el codigo manualmente.");
+    }
   }
 
   async function lookup(value = code) {
     if (!value.trim()) return;
+    if (!hasPublicSupabaseEnv()) {
+      setStatus("Configura Supabase para consultar codigos reales.");
+      return;
+    }
+
     setStatus("Buscando producto");
     const response = await fetch("/api/scan-code", {
       method: "POST",
@@ -72,6 +82,11 @@ export function CodeScanner() {
 
   async function saveProduct() {
     if (!result?.product) return;
+    if (!hasPublicSupabaseEnv()) {
+      setStatus("Configura Supabase para guardar productos.");
+      return;
+    }
+
     const today = new Date().toISOString().slice(0, 10);
     const response = await fetch("/api/meals", {
       method: "POST",

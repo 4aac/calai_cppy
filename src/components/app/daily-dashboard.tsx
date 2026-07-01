@@ -5,6 +5,7 @@ import { Camera, Plus, ScanBarcode } from "lucide-react";
 
 import { ButtonLink } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { hasPublicSupabaseEnv } from "@/lib/client-env";
 import { demoSummary } from "@/lib/sample-data";
 import type { DailySummary } from "@/lib/types";
 
@@ -19,10 +20,7 @@ export function DailyDashboard() {
   const [summary, setSummary] = useState<DailySummary>(demoSummary);
 
   useEffect(() => {
-    if (
-      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-    ) {
+    if (!hasPublicSupabaseEnv()) {
       return;
     }
 

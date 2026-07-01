@@ -5,6 +5,7 @@ import { Camera, Save, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { hasPublicSupabaseEnv } from "@/lib/client-env";
 import { calculateTotals, roundMacro } from "@/lib/nutrition";
 import type { MealItemDraft } from "@/lib/types";
 
@@ -60,6 +61,11 @@ export function PhotoAnalyzer() {
       return;
     }
 
+    if (!hasPublicSupabaseEnv()) {
+      setStatus("Configura Supabase y OpenAI para analizar fotos reales. El ejemplo editable sigue disponible.");
+      return;
+    }
+
     setPending(true);
     setStatus(null);
     const response = await fetch("/api/analyze-photo", {
@@ -97,6 +103,11 @@ export function PhotoAnalyzer() {
   }
 
   async function saveMeal() {
+    if (!hasPublicSupabaseEnv()) {
+      setStatus("Configura Supabase para guardar comidas.");
+      return;
+    }
+
     setPending(true);
     setStatus(null);
     const today = new Date().toISOString().slice(0, 10);
@@ -155,7 +166,7 @@ export function PhotoAnalyzer() {
               <div>
                 <p className="font-semibold">{item.name}</p>
                 <p className="mt-1 text-sm text-[#708078]">
-                  {item.kcal} kcal · {item.confidence}
+                  {item.kcal} kcal - {item.confidence}
                 </p>
               </div>
               <Field
