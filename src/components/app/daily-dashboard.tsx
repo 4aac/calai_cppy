@@ -19,6 +19,13 @@ export function DailyDashboard() {
   const [summary, setSummary] = useState<DailySummary>(demoSummary);
 
   useEffect(() => {
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    ) {
+      return;
+    }
+
     const date = new Date().toISOString().slice(0, 10);
     fetch(`/api/daily-summary?date=${date}`)
       .then((response) => (response.ok ? response.json() : null))
