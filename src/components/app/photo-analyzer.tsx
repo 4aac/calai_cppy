@@ -62,7 +62,7 @@ export function PhotoAnalyzer() {
     }
 
     if (!hasPublicSupabaseEnv()) {
-      setStatus("Configura Supabase y OpenAI para analizar fotos reales. El ejemplo editable sigue disponible.");
+      setStatus("Configura Supabase y Gemini para analizar fotos reales. El ejemplo editable sigue disponible.");
       return;
     }
 

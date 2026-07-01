@@ -6,7 +6,7 @@ MVP PWA movil-first para registrar calorias y macros desde foto, codigo de barra
 
 - Next.js 16 App Router, React 19, TypeScript y Tailwind CSS.
 - Supabase Auth + Postgres con RLS.
-- OpenAI Responses API para vision con salida estructurada.
+- Google Gemini API con Gemma 4 26B A4B IT para vision con salida estructurada.
 - Open Food Facts API v3 para productos por EAN/UPC.
 - ZXing browser para escaneo web de codigos.
 
@@ -18,12 +18,12 @@ Rellena el archivo `.env`:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=
-OPENAI_API_KEY=
-OPENAI_VISION_MODEL=gpt-5.5
+GEMINI_API_KEY=
+GEMMA_VISION_MODEL=gemma-4-26b-a4b-it
 OPEN_FOOD_FACTS_USER_AGENT=CalAI Copy MVP - contact: you@example.com
 ```
 
-`SUPABASE_SECRET_KEY` y `OPENAI_API_KEY` nunca deben exponerse al cliente. En Vercel, configura estos valores en Project Settings -> Environment Variables para Preview y Production.
+`SUPABASE_SECRET_KEY` y `GEMINI_API_KEY` nunca deben exponerse al cliente. En Vercel, configura estos valores en Project Settings -> Environment Variables para Preview y Production.
 
 ## Supabase
 
@@ -41,7 +41,7 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:3000`. Sin variables de entorno, la UI usa datos de demo para que puedas revisar la experiencia; las APIs protegidas devuelven errores claros hasta configurar Supabase/OpenAI.
+Abre `http://localhost:3000`. Sin variables de entorno, la UI usa datos de demo para que puedas revisar la experiencia; las APIs protegidas devuelven errores claros hasta configurar Supabase/Gemini.
 
 ## Checks
 

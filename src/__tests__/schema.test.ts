@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { photoAnalysisSchema, saveMealSchema } from "@/lib/schemas/api";
 
 describe("API schemas", () => {
-  it("accepts strict OpenAI photo analysis payloads", () => {
+  it("accepts strict Gemma photo analysis payloads", () => {
     const parsed = photoAnalysisSchema.parse({
       meal_name: "Arroz con pollo",
       items: [
