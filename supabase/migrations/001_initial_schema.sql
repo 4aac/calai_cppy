@@ -21,14 +21,15 @@ create table if not exists public.foods (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   name_es text not null,
-  source text not null default 'seed',
+  source text not null default 'curated',
   kcal_per_100g numeric not null check (kcal_per_100g >= 0),
   protein_per_100g numeric not null check (protein_per_100g >= 0),
   carbs_per_100g numeric not null check (carbs_per_100g >= 0),
   fat_per_100g numeric not null check (fat_per_100g >= 0),
   fiber_per_100g numeric check (fiber_per_100g >= 0),
   verified boolean not null default false,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint foods_source_not_seed check (source <> 'seed')
 );
 
 create table if not exists public.branded_products (
@@ -156,18 +157,3 @@ create policy "corrections insert own" on public.user_corrections for insert wit
 
 create policy "scan history select own" on public.scan_history for select using (auth.uid() = user_id);
 create policy "scan history insert own" on public.scan_history for insert with check (auth.uid() = user_id);
-
-insert into public.foods
-  (name, name_es, source, kcal_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g, fiber_per_100g, verified)
-values
-  ('cooked white rice', 'Arroz blanco cocido', 'seed', 130, 2.7, 28, 0.3, null, true),
-  ('grilled chicken breast', 'Pechuga de pollo a la plancha', 'seed', 165, 31, 0, 3.6, null, true),
-  ('olive oil', 'Aceite de oliva', 'seed', 884, 0, 0, 100, null, true),
-  ('banana', 'Platano', 'seed', 89, 1.1, 22.8, 0.3, 2.6, true),
-  ('egg', 'Huevo', 'seed', 143, 12.6, 0.7, 9.5, null, true),
-  ('greek yogurt', 'Yogur griego natural', 'seed', 125, 8, 4, 8, null, true),
-  ('white bread', 'Pan blanco', 'seed', 265, 9, 49, 3.2, null, true),
-  ('cooked pasta', 'Pasta cocida', 'seed', 158, 5.8, 30.9, 0.9, null, true),
-  ('salmon', 'Salmon', 'seed', 208, 20.4, 0, 13.4, null, true),
-  ('boiled potato', 'Patata cocida', 'seed', 87, 1.9, 20.1, 0.1, 1.8, true)
-on conflict do nothing;

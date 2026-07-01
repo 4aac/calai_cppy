@@ -1,5 +1,4 @@
 import { calculateFromPer100g, calculateTotals } from "@/lib/nutrition";
-import { findSeedFoods } from "@/lib/sample-data";
 import { analyzeFoodPhoto } from "@/lib/services/gemma";
 import { requireUser } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -40,7 +39,7 @@ async function findBestFood(name: string): Promise<FoodRecord | null> {
     };
   }
 
-  return findSeedFoods(name)[0] ?? null;
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -71,16 +70,23 @@ export async function POST(request: Request) {
     mimeType: image.type || "image/jpeg",
   });
   const items: MealItemDraft[] = [];
+  const warnings = [...analysis.warnings];
 
   for (const item of analysis.items) {
     const matchedFood = await findBestFood(item.food_name_es);
-    const nutrition = matchedFood
-      ? calculateFromPer100g(matchedFood.nutritionPer100g, item.estimated_grams)
-      : { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+
+    if (!matchedFood) {
+      warnings.push(
+        `${item.food_name_es}: identificado por IA, pero sin alimento real verificado en la base nutricional.`,
+      );
+      continue;
+    }
+
+    const nutrition = calculateFromPer100g(matchedFood.nutritionPer100g, item.estimated_grams);
 
     items.push({
-      foodId: matchedFood?.source === "supabase" ? matchedFood.id ?? null : null,
-      name: matchedFood?.nameEs ?? item.food_name_es,
+      foodId: matchedFood.id ?? null,
+      name: matchedFood.nameEs,
       grams: item.estimated_grams,
       ...nutrition,
       confidence: item.confidence,
@@ -92,7 +98,7 @@ export async function POST(request: Request) {
   return Response.json({
     mealName: analysis.meal_name,
     items,
-    warnings: analysis.warnings,
+    warnings,
     total: calculateTotals(items),
   });
 }

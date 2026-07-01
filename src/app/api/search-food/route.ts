@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 
-import { findSeedFoods } from "@/lib/sample-data";
 import { foodRecordFromSupabase, sanitizeFoodSearchQuery, toSearchResult } from "@/lib/services/foods";
 import { requireUser } from "@/lib/supabase/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -17,9 +16,7 @@ export async function GET(request: NextRequest) {
   const supabaseResults = shouldSearchDatabase
     ? await searchSupabaseFoods(supabase, safeQuery)
     : [];
-  const seedResults = findSeedFoods(safeQuery || query);
-
-  const merged = [...supabaseResults, ...seedResults]
+  const merged = supabaseResults
     .filter((food, index, all) => all.findIndex((item) => item.nameEs === food.nameEs) === index)
     .slice(0, 12)
     .map(toSearchResult);

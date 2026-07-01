@@ -23,7 +23,7 @@ export interface FoodRecord {
   id?: string;
   name: string;
   nameEs: string;
-  source: "seed" | "supabase" | "open_food_facts" | "manual";
+  source: "supabase" | "open_food_facts" | "manual";
   nutritionPer100g: NutritionPer100g;
   verified: boolean;
   brand?: string | null;

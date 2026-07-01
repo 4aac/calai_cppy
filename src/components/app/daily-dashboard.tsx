@@ -6,7 +6,6 @@ import { Camera, Plus, ScanBarcode } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { hasPublicSupabaseEnv } from "@/lib/client-env";
-import { demoSummary } from "@/lib/sample-data";
 import type { DailySummary } from "@/lib/types";
 
 const mealLabels = {
@@ -17,7 +16,7 @@ const mealLabels = {
 };
 
 export function DailyDashboard() {
-  const [summary, setSummary] = useState<DailySummary>(demoSummary);
+  const [summary, setSummary] = useState<DailySummary>(() => emptyDailySummary());
 
   useEffect(() => {
     if (!hasPublicSupabaseEnv()) {
@@ -105,6 +104,15 @@ export function DailyDashboard() {
       </section>
     </div>
   );
+}
+
+function emptyDailySummary(): DailySummary {
+  return {
+    date: new Date().toISOString().slice(0, 10),
+    target: { kcal: 2850, protein: 160, carbs: 385, fat: 75 },
+    consumed: { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+    meals: [],
+  };
 }
 
 function Macro({ label, value, max }: { label: string; value: number; max: number }) {

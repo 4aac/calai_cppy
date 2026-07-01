@@ -32,18 +32,42 @@ export const scanCodeSchema = z.object({
   code: z.string().min(1).max(512),
 });
 
-export const mealItemInputSchema = z.object({
-  foodId: z.string().uuid().nullable().optional(),
-  productId: z.string().uuid().nullable().optional(),
-  name: z.string().min(1),
-  grams: z.coerce.number().positive().max(5000),
-  kcalPer100g: z.coerce.number().nonnegative().max(2000),
-  proteinPer100g: z.coerce.number().nonnegative().max(300),
-  carbsPer100g: z.coerce.number().nonnegative().max(300),
-  fatPer100g: z.coerce.number().nonnegative().max(300),
-  confidence: confidenceSchema.default("high"),
-  source: mealSourceSchema,
-});
+export const mealItemInputSchema = z
+  .object({
+    foodId: z.string().uuid().nullable().optional(),
+    productId: z.string().uuid().nullable().optional(),
+    name: z.string().min(1),
+    grams: z.coerce.number().positive().max(5000),
+    kcalPer100g: z.coerce.number().nonnegative().max(2000),
+    proteinPer100g: z.coerce.number().nonnegative().max(300),
+    carbsPer100g: z.coerce.number().nonnegative().max(300),
+    fatPer100g: z.coerce.number().nonnegative().max(300),
+    confidence: confidenceSchema.default("high"),
+    source: mealSourceSchema,
+  })
+  .superRefine((item, context) => {
+    const hasNutritionBasis =
+      item.kcalPer100g > 0 ||
+      item.proteinPer100g > 0 ||
+      item.carbsPer100g > 0 ||
+      item.fatPer100g > 0;
+
+    if (!hasNutritionBasis) {
+      context.addIssue({
+        code: "custom",
+        message: "Meal item needs a real nutrition basis",
+        path: ["kcalPer100g"],
+      });
+    }
+
+    if (item.source !== "manual" && !item.foodId && !item.productId) {
+      context.addIssue({
+        code: "custom",
+        message: "Non-manual meal items must reference a real food or product",
+        path: ["foodId"],
+      });
+    }
+  });
 
 export const saveMealSchema = z.object({
   mealType: mealTypeSchema,

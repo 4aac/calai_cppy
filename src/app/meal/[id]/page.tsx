@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { MobileShell } from "@/components/app/mobile-shell";
-import { demoSummary } from "@/lib/sample-data";
 import { protectPage } from "@/lib/supabase/page-auth";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import type { MealItemDraft, MealType } from "@/lib/types";
@@ -11,9 +10,7 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
   const user = await protectPage();
 
   const { id } = await params;
-  const meal = user && hasSupabaseEnv()
-    ? await getUserMeal(id, user.id)
-    : demoSummary.meals.find((item) => item.id === id) ?? demoSummary.meals[1];
+  const meal = user && hasSupabaseEnv() ? await getUserMeal(id, user.id) : null;
 
   if (!meal) {
     notFound();

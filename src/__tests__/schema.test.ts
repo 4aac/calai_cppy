@@ -30,4 +30,26 @@ describe("API schemas", () => {
       }),
     ).toThrow();
   });
+
+  it("rejects non-manual meal items without a real food or product id", () => {
+    expect(() =>
+      saveMealSchema.parse({
+        mealType: "lunch",
+        date: "2026-07-01",
+        title: "Comida",
+        items: [
+          {
+            name: "Pollo",
+            grams: 150,
+            kcalPer100g: 165,
+            proteinPer100g: 31,
+            carbsPer100g: 0,
+            fatPer100g: 3.6,
+            confidence: "high",
+            source: "search",
+          },
+        ],
+      }),
+    ).toThrow();
+  });
 });

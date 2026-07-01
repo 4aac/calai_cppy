@@ -28,11 +28,11 @@ OPEN_FOOD_FACTS_USER_AGENT=CalAI Copy MVP - contact: you@example.com
 ## Supabase
 
 1. Crea un proyecto Supabase.
-2. Ejecuta `supabase/migrations/001_initial_schema.sql` en el SQL editor o con Supabase CLI.
+2. Ejecuta las migraciones de `supabase/migrations/` en orden desde el SQL editor o con Supabase CLI.
 3. Habilita email/password en Auth.
 4. Copia URL, publishable key y service role key al `.env` y a Vercel.
 
-La migracion crea `profiles`, `foods`, `branded_products`, `meals`, `meal_items`, `user_corrections` y `scan_history`, activa RLS y seed de alimentos frecuentes.
+Las migraciones crean `profiles`, `foods`, `branded_products`, `meals`, `meal_items`, `user_corrections` y `scan_history`, activan RLS y eliminan cualquier alimento semilla. `foods` queda reservado para alimentos reales curados/importados; `branded_products` se rellena desde Open Food Facts.
 
 ## Desarrollo
 
@@ -41,7 +41,7 @@ npm install
 npm run dev
 ```
 
-Abre `http://localhost:3000`. Sin variables de entorno, la UI usa datos de demo para que puedas revisar la experiencia; las APIs protegidas devuelven errores claros hasta configurar Supabase/Gemini.
+Abre `http://localhost:3000`. Sin variables de entorno, las pantallas arrancan vacias y las APIs protegidas devuelven errores claros hasta configurar Supabase/Gemini.
 
 ## Checks
 

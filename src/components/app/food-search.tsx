@@ -6,7 +6,6 @@ import { Plus, Save, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { hasPublicSupabaseEnv } from "@/lib/client-env";
-import { findSeedFoods } from "@/lib/sample-data";
 
 interface SearchResult {
   id: string | null;
@@ -20,18 +19,17 @@ interface SearchResult {
 }
 
 export function FoodSearch() {
-  const [query, setQuery] = useState("pollo");
+  const [query, setQuery] = useState("");
   const [grams, setGrams] = useState(150);
-  const [results, setResults] = useState<SearchResult[]>(() => initialFoodResults());
-  const [selected, setSelected] = useState<SearchResult | null>(() => initialFoodResults()[0] ?? null);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [selected, setSelected] = useState<SearchResult | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
   async function runSearch(value = query) {
     if (!hasPublicSupabaseEnv()) {
-      const fallback = findSeedFoods(value).map(toResult);
-      setResults(fallback);
-      setSelected(fallback[0] ?? null);
-      setStatus("Usando base local. Configura Supabase para busqueda persistente.");
+      setResults([]);
+      setSelected(null);
+      setStatus("Configura Supabase para buscar alimentos reales.");
       return;
     }
 
@@ -41,12 +39,13 @@ export function FoodSearch() {
     if (response.ok && payload?.results) {
       setResults(payload.results);
       setSelected(payload.results[0] ?? null);
+      setStatus(payload.results.length ? null : "No hay alimentos reales para esa busqueda.");
       return;
     }
 
-    const fallback = findSeedFoods(value).map(toResult);
-    setResults(fallback);
-    setSelected(fallback[0] ?? null);
+    setResults([]);
+    setSelected(null);
+    setStatus(payload?.error ?? "No se pudo buscar en la base real.");
   }
 
   async function saveFood() {
@@ -110,6 +109,11 @@ export function FoodSearch() {
             <Plus className="h-5 w-5 text-[#1f9d62]" />
           </button>
         ))}
+        {!results.length ? (
+          <p className="rounded-2xl border border-dashed border-[#dfe7e2] px-4 py-5 text-sm font-medium text-[#708078]">
+            Busca un alimento guardado en Supabase o escanea un producto real.
+          </p>
+        ) : null}
       </section>
 
       {selected ? (
@@ -128,21 +132,4 @@ export function FoodSearch() {
       {status ? <p className="text-sm font-medium text-[#607369]">{status}</p> : null}
     </div>
   );
-}
-
-function initialFoodResults() {
-  return findSeedFoods("pollo").map(toResult);
-}
-
-function toResult(food: ReturnType<typeof findSeedFoods>[number]): SearchResult {
-  return {
-    id: null,
-    name: food.nameEs,
-    source: food.source,
-    verified: food.verified,
-    kcalPer100g: food.nutritionPer100g.kcal,
-    proteinPer100g: food.nutritionPer100g.protein,
-    carbsPer100g: food.nutritionPer100g.carbs,
-    fatPer100g: food.nutritionPer100g.fat,
-  };
 }

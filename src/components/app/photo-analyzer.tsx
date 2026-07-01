@@ -9,45 +9,9 @@ import { hasPublicSupabaseEnv } from "@/lib/client-env";
 import { calculateTotals, roundMacro } from "@/lib/nutrition";
 import type { MealItemDraft } from "@/lib/types";
 
-const demoItems: MealItemDraft[] = [
-  {
-    name: "Arroz blanco cocido",
-    grams: 180,
-    kcal: 234,
-    protein: 4.9,
-    carbs: 50.4,
-    fat: 0.5,
-    confidence: "medium",
-    source: "photo_ai",
-    reason: "Porcion visible en el plato",
-  },
-  {
-    name: "Pechuga de pollo a la plancha",
-    grams: 150,
-    kcal: 248,
-    protein: 46.5,
-    carbs: 0,
-    fat: 5.4,
-    confidence: "high",
-    source: "photo_ai",
-    reason: "Pieza completa y clara",
-  },
-  {
-    name: "Aceite de oliva",
-    grams: 10,
-    kcal: 88,
-    protein: 0,
-    carbs: 0,
-    fat: 10,
-    confidence: "low",
-    source: "photo_ai",
-    reason: "No se ve el aceite usado",
-  },
-];
-
 export function PhotoAnalyzer() {
-  const [items, setItems] = useState<MealItemDraft[]>(demoItems);
-  const [warnings, setWarnings] = useState(["Aceites y salsas pueden variar."]);
+  const [items, setItems] = useState<MealItemDraft[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [mealName, setMealName] = useState("Resultado");
   const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -57,12 +21,12 @@ export function PhotoAnalyzer() {
   async function analyze(formData: FormData) {
     const image = formData.get("image");
     if (!(image instanceof File) || image.size === 0) {
-      setStatus("Selecciona una foto o usa el ejemplo editable.");
+      setStatus("Selecciona una foto para analizar una comida real.");
       return;
     }
 
     if (!hasPublicSupabaseEnv()) {
-      setStatus("Configura Supabase y Gemini para analizar fotos reales. El ejemplo editable sigue disponible.");
+      setStatus("Configura Supabase y Gemini para analizar fotos reales.");
       return;
     }
 
@@ -83,6 +47,9 @@ export function PhotoAnalyzer() {
     setMealName(payload.mealName ?? "Resultado");
     setItems(payload.items);
     setWarnings(payload.warnings ?? []);
+    if (!payload.items?.length) {
+      setStatus("La IA no encontro alimentos con base nutricional real en Supabase.");
+    }
   }
 
   function updateGrams(index: number, grams: number) {
@@ -103,6 +70,11 @@ export function PhotoAnalyzer() {
   }
 
   async function saveMeal() {
+    if (!items.length) {
+      setStatus("Analiza una comida con alimentos reales antes de guardar.");
+      return;
+    }
+
     if (!hasPublicSupabaseEnv()) {
       setStatus("Configura Supabase para guardar comidas.");
       return;
@@ -178,6 +150,11 @@ export function PhotoAnalyzer() {
               />
             </div>
           ))}
+          {!items.length ? (
+            <p className="rounded-2xl border border-dashed border-[#dfe7e2] px-4 py-5 text-sm font-medium text-[#708078]">
+              El resultado aparecera aqui despues de analizar una foto real.
+            </p>
+          ) : null}
         </div>
 
         {warnings.map((warning) => (
