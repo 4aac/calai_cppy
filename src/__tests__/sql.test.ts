@@ -29,7 +29,10 @@ describe("Supabase migration", () => {
 
   it("limits meal access to the authenticated owner", () => {
     expect(migration).toContain("auth.uid() = user_id");
+    expect(migration).toContain("meals delete own");
     expect(migration).toContain("meal items select own");
+    expect(migration).toContain("meal items delete own");
+    expect(migration).toContain("meal_id uuid not null references public.meals(id) on delete cascade");
     expect(migration).toContain("corrections insert own");
   });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { photoAnalysisSchema, saveMealSchema } from "@/lib/schemas/api";
+import { deleteMealSchema, photoAnalysisSchema, saveMealSchema } from "@/lib/schemas/api";
 
 describe("API schemas", () => {
   it("accepts strict Gemma photo analysis payloads", () => {
@@ -77,5 +77,12 @@ describe("API schemas", () => {
     });
 
     expect(parsed.items[0].source).toBe("photo_ai");
+  });
+
+  it("validates meal deletion ids", () => {
+    expect(deleteMealSchema.parse({ id: "550e8400-e29b-41d4-a716-446655440000" }).id).toBe(
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
+    expect(() => deleteMealSchema.parse({ id: "not-a-uuid" })).toThrow();
   });
 });

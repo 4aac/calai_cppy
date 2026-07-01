@@ -81,7 +81,7 @@ export function PhotoAnalyzer() {
       if (!payload.items?.length) {
         setStatus("No se pudo extraer ningun alimento de la foto.");
       } else {
-        setStatus(null);
+        setStatus("Analisis listo. No cuenta para el dia hasta que pulses Anadir al dia.");
       }
     } finally {
       if (analyzeRequestRef.current === requestId) {
@@ -107,9 +107,9 @@ export function PhotoAnalyzer() {
     );
   }
 
-  async function saveMeal() {
+  async function addMealToDay() {
     if (!items.length) {
-      setStatus("Analiza una comida con alimentos reales antes de guardar.");
+      setStatus("Analiza una comida antes de anadirla al dia.");
       return;
     }
 
@@ -144,7 +144,7 @@ export function PhotoAnalyzer() {
         }),
       });
 
-      setStatus(response.ok ? "Comida guardada" : "Inicia sesion y configura Supabase para guardar.");
+      setStatus(response.ok ? "Comida anadida al dia." : "Inicia sesion y configura Supabase para guardar.");
     } finally {
       setPendingAction(null);
     }
@@ -231,8 +231,14 @@ export function PhotoAnalyzer() {
           </p>
         ))}
 
-        <Button onClick={saveMeal} loading={pendingAction === "save"} disabled={pending} icon={<Save className="h-4 w-4" />}>
-          {pendingAction === "save" ? "Guardando" : "Guardar comida"}
+        {items.length ? (
+          <p className="rounded-2xl bg-[#f8fbf9] px-4 py-3 text-sm font-medium text-[#607369]">
+            Solo es un analisis. No suma al diario hasta anadirlo al dia.
+          </p>
+        ) : null}
+
+        <Button onClick={addMealToDay} loading={pendingAction === "save"} disabled={pending || !items.length} icon={<Save className="h-4 w-4" />}>
+          {pendingAction === "save" ? "Anadiendo" : "Anadir al dia"}
         </Button>
       </section>
 

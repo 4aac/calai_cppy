@@ -80,6 +80,10 @@ export const saveMealSchema = z.object({
   items: z.array(mealItemInputSchema).min(1),
 });
 
+export const deleteMealSchema = z.object({
+  id: z.string().uuid(),
+});
+
 export const correctionSchema = z.object({
   mealItemId: z.string().uuid().nullable().optional(),
   originalPrediction: z.record(z.string(), z.unknown()),

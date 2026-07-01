@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Camera, Plus, ScanBarcode } from "lucide-react";
+import { Camera, LoaderCircle, Plus, ScanBarcode, Trash2 } from "lucide-react";
 
 import { ButtonLink } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { hasPublicSupabaseEnv } from "@/lib/client-env";
+import { roundMacro } from "@/lib/nutrition";
 import type { DailySummary } from "@/lib/types";
 
 const mealLabels = {
@@ -17,6 +19,8 @@ const mealLabels = {
 
 export function DailyDashboard() {
   const [summary, setSummary] = useState<DailySummary>(() => emptyDailySummary());
+  const [deletingMealId, setDeletingMealId] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasPublicSupabaseEnv()) {
@@ -31,6 +35,32 @@ export function DailyDashboard() {
       })
       .catch(() => undefined);
   }, []);
+
+  async function deleteMeal(mealId: string) {
+    if (deletingMealId) return;
+
+    setDeletingMealId(mealId);
+    setStatus(null);
+
+    try {
+      const response = await fetch(`/api/meals?id=${encodeURIComponent(mealId)}`, {
+        method: "DELETE",
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setStatus(payload?.error ?? "No se pudo eliminar la comida.");
+        return;
+      }
+
+      setSummary((current) => removeMealFromSummary(current, mealId));
+      setStatus("Comida eliminada del dia.");
+    } catch {
+      setStatus("No se pudo eliminar la comida.");
+    } finally {
+      setDeletingMealId(null);
+    }
+  }
 
   return (
     <div className="grid gap-7">
@@ -82,25 +112,64 @@ export function DailyDashboard() {
         </div>
 
         {(["breakfast", "lunch", "snack", "dinner"] as const).map((mealType) => {
-          const meal = summary.meals.find((item) => item.mealType === mealType);
+          const meals = summary.meals.filter((item) => item.mealType === mealType);
+          const kcal = meals.reduce((total, meal) => total + meal.total.kcal, 0);
 
           return (
             <div
               key={mealType}
-              className="flex min-h-16 items-center justify-between border-b border-[#edf1ee] py-3"
+              className="min-h-16 border-b border-[#edf1ee] py-3"
             >
-              <div>
-                <p className="text-base font-semibold">{mealLabels[mealType]}</p>
-                <p className="mt-1 text-sm text-[#718078]">
-                  {meal ? `${meal.items.length} alimentos` : "Sin registrar"}
-                </p>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-base font-semibold">{mealLabels[mealType]}</p>
+                  <p className="mt-1 text-sm text-[#718078]">
+                    {meals.length ? `${meals.length} registros` : "Sin registrar"}
+                  </p>
+                </div>
+                <span className="text-sm font-semibold text-[#2b3a31]">
+                  {meals.length ? `${kcal} kcal` : "+"}
+                </span>
               </div>
-              <span className="text-sm font-semibold text-[#2b3a31]">
-                {meal ? `${meal.total.kcal} kcal` : "+"}
-              </span>
+
+              {meals.length ? (
+                <div className="mt-3 grid gap-2">
+                  {meals.map((meal) => (
+                    <div
+                      key={meal.id}
+                      className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 rounded-2xl bg-[#f8fbf9] px-3 py-2"
+                    >
+                      <Link href={`/meal/${meal.id}`} className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#17231d]">{meal.title}</p>
+                        <p className="mt-0.5 text-xs font-medium text-[#718078]">
+                          {meal.items.length} {meal.items.length === 1 ? "alimento" : "alimentos"}
+                        </p>
+                      </Link>
+                      <span className="whitespace-nowrap text-sm font-semibold text-[#2b3a31]">
+                        {meal.total.kcal} kcal
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Eliminar ${meal.title}`}
+                        className="grid h-10 w-10 place-items-center rounded-xl text-[#b23620] transition hover:bg-[#fff2ef] disabled:cursor-not-allowed disabled:opacity-55"
+                        disabled={deletingMealId !== null}
+                        onClick={() => deleteMeal(meal.id)}
+                      >
+                        {deletingMealId === meal.id ? (
+                          <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           );
         })}
+
+        {status ? <p className="text-sm font-medium text-[#607369]">{status}</p> : null}
       </section>
     </div>
   );
@@ -123,4 +192,20 @@ function Macro({ label, value, max }: { label: string; value: number; max: numbe
       <Progress value={value} max={max} className="mt-3 h-1.5" />
     </div>
   );
+}
+
+function removeMealFromSummary(summary: DailySummary, mealId: string): DailySummary {
+  const removed = summary.meals.find((meal) => meal.id === mealId);
+  if (!removed) return summary;
+
+  return {
+    ...summary,
+    consumed: {
+      kcal: Math.max(0, summary.consumed.kcal - removed.total.kcal),
+      protein: Math.max(0, roundMacro(summary.consumed.protein - removed.total.protein)),
+      carbs: Math.max(0, roundMacro(summary.consumed.carbs - removed.total.carbs)),
+      fat: Math.max(0, roundMacro(summary.consumed.fat - removed.total.fat)),
+    },
+    meals: summary.meals.filter((meal) => meal.id !== mealId),
+  };
 }
