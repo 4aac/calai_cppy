@@ -1,8 +1,8 @@
 import { calculateFromPer100g, calculateTotals } from "@/lib/nutrition";
 import { analyzeFoodPhoto } from "@/lib/services/gemma";
 import { requireUser } from "@/lib/supabase/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { FoodRecord, MealItemDraft } from "@/lib/types";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import type { FoodRecord, MealItemDraft, NutritionPer100g } from "@/lib/types";
 
 export const maxDuration = 45;
 
@@ -35,7 +35,7 @@ function foodSearchTerms(name: string) {
 }
 
 async function findBestFood(name: string): Promise<FoodRecord | null> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServiceClient();
 
   for (const term of foodSearchTerms(name)) {
     const pattern = `%${term}%`;
@@ -66,6 +66,20 @@ async function findBestFood(name: string): Promise<FoodRecord | null> {
   }
 
   return null;
+}
+
+function nutritionEstimateFromPhoto(item: {
+  estimated_kcal_per_100g: number;
+  estimated_protein_per_100g: number;
+  estimated_carbs_per_100g: number;
+  estimated_fat_per_100g: number;
+}): NutritionPer100g {
+  return {
+    kcal: item.estimated_kcal_per_100g,
+    protein: item.estimated_protein_per_100g,
+    carbs: item.estimated_carbs_per_100g,
+    fat: item.estimated_fat_per_100g,
+  };
 }
 
 export async function POST(request: Request) {
@@ -100,24 +114,24 @@ export async function POST(request: Request) {
 
   for (const item of analysis.items) {
     const matchedFood = await findBestFood(item.food_name_es);
+    const nutritionPer100g = matchedFood?.nutritionPer100g ?? nutritionEstimateFromPhoto(item);
+    const nutrition = calculateFromPer100g(nutritionPer100g, item.estimated_grams);
+    const usedPhotoEstimate = !matchedFood;
 
-    if (!matchedFood) {
-      warnings.push(
-        `${item.food_name_es}: identificado por IA, pero sin alimento real verificado en la base nutricional.`,
-      );
-      continue;
+    if (usedPhotoEstimate) {
+      warnings.push(`${item.food_name_es}: calorias estimadas por IA; confirma gramos y alimento antes de guardar.`);
     }
 
-    const nutrition = calculateFromPer100g(matchedFood.nutritionPer100g, item.estimated_grams);
-
     items.push({
-      foodId: matchedFood.id ?? null,
-      name: matchedFood.nameEs,
+      foodId: matchedFood?.id ?? null,
+      name: matchedFood?.nameEs ?? item.food_name_es,
       grams: item.estimated_grams,
       ...nutrition,
-      confidence: item.confidence,
+      confidence: usedPhotoEstimate && item.confidence === "high" ? "medium" : item.confidence,
       source: "photo_ai",
-      reason: item.reason,
+      reason: matchedFood
+        ? `${item.reason} Base nutricional: catalogo global.`
+        : `${item.reason} Base nutricional: estimacion IA por 100 g.`,
     });
   }
 

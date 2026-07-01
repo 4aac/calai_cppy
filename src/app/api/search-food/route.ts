@@ -2,14 +2,14 @@ import { NextRequest } from "next/server";
 
 import { foodRecordFromSupabase, sanitizeFoodSearchQuery, toSearchResult } from "@/lib/services/foods";
 import { requireUser } from "@/lib/supabase/auth";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const auth = await requireUser();
   if (auth.response) return auth.response;
 
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServiceClient();
   const safeQuery = sanitizeFoodSearchQuery(query);
   const shouldSearchDatabase = safeQuery.length > 0 || query.length === 0;
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 }
 
 async function searchSupabaseFoods(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  supabase: ReturnType<typeof createSupabaseServiceClient>,
   safeQuery: string,
 ) {
   const pattern = `%${safeQuery}%`;

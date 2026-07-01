@@ -10,6 +10,10 @@ describe("API schemas", () => {
         {
           food_name_es: "arroz blanco cocido",
           estimated_grams: 180,
+          estimated_kcal_per_100g: 130,
+          estimated_protein_per_100g: 2.7,
+          estimated_carbs_per_100g: 28.2,
+          estimated_fat_per_100g: 0.3,
           confidence: "medium",
           reason: "porcion visible",
         },
@@ -31,7 +35,7 @@ describe("API schemas", () => {
     ).toThrow();
   });
 
-  it("rejects non-manual meal items without a real food or product id", () => {
+  it("rejects search meal items without a real food or product id", () => {
     expect(() =>
       saveMealSchema.parse({
         mealType: "lunch",
@@ -51,5 +55,27 @@ describe("API schemas", () => {
         ],
       }),
     ).toThrow();
+  });
+
+  it("accepts confirmed photo items with AI-estimated nutrition", () => {
+    const parsed = saveMealSchema.parse({
+      mealType: "lunch",
+      date: "2026-07-01",
+      title: "Comida",
+      items: [
+        {
+          name: "Tortilla de patata",
+          grams: 180,
+          kcalPer100g: 210,
+          proteinPer100g: 6,
+          carbsPer100g: 18,
+          fatPer100g: 12,
+          confidence: "medium",
+          source: "photo_ai",
+        },
+      ],
+    });
+
+    expect(parsed.items[0].source).toBe("photo_ai");
   });
 });

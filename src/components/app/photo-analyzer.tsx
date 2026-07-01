@@ -52,7 +52,7 @@ export function PhotoAnalyzer() {
       setItems(payload.items);
       setWarnings(payload.warnings ?? []);
       if (!payload.items?.length) {
-        setStatus("La IA no encontro alimentos con base nutricional real en Supabase.");
+        setStatus("No se pudo extraer ningun alimento de la foto.");
       }
     } finally {
       setPendingAction(null);

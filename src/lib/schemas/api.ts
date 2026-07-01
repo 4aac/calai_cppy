@@ -11,6 +11,10 @@ export const photoAnalysisSchema = z.object({
       z.object({
         food_name_es: z.string().min(1),
         estimated_grams: z.number().positive().max(2000),
+        estimated_kcal_per_100g: z.number().positive().max(2000),
+        estimated_protein_per_100g: z.number().nonnegative().max(300),
+        estimated_carbs_per_100g: z.number().nonnegative().max(300),
+        estimated_fat_per_100g: z.number().nonnegative().max(300),
         confidence: confidenceSchema,
         reason: z.string().min(1),
       }),
@@ -60,10 +64,10 @@ export const mealItemInputSchema = z
       });
     }
 
-    if (item.source !== "manual" && !item.foodId && !item.productId) {
+    if ((item.source === "barcode" || item.source === "search") && !item.foodId && !item.productId) {
       context.addIssue({
         code: "custom",
-        message: "Non-manual meal items must reference a real food or product",
+        message: "Barcode and search meal items must reference a real food or product",
         path: ["foodId"],
       });
     }

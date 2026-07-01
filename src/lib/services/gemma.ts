@@ -38,7 +38,16 @@ const photoAnalysisJsonSchema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["food_name_es", "estimated_grams", "confidence", "reason"],
+        required: [
+          "food_name_es",
+          "estimated_grams",
+          "estimated_kcal_per_100g",
+          "estimated_protein_per_100g",
+          "estimated_carbs_per_100g",
+          "estimated_fat_per_100g",
+          "confidence",
+          "reason",
+        ],
         properties: {
           food_name_es: {
             type: "string",
@@ -49,6 +58,30 @@ const photoAnalysisJsonSchema = {
             minimum: 1,
             maximum: 2000,
             description: "Estimated edible grams for this item.",
+          },
+          estimated_kcal_per_100g: {
+            type: "number",
+            minimum: 1,
+            maximum: 2000,
+            description: "Estimated kcal per 100g for the visible food before multiplying by grams.",
+          },
+          estimated_protein_per_100g: {
+            type: "number",
+            minimum: 0,
+            maximum: 300,
+            description: "Estimated protein grams per 100g.",
+          },
+          estimated_carbs_per_100g: {
+            type: "number",
+            minimum: 0,
+            maximum: 300,
+            description: "Estimated carbohydrate grams per 100g.",
+          },
+          estimated_fat_per_100g: {
+            type: "number",
+            minimum: 0,
+            maximum: 300,
+            description: "Estimated fat grams per 100g.",
           },
           confidence: {
             type: "string",
@@ -72,11 +105,11 @@ export async function analyzeFoodPhoto(input: PhotoInput): Promise<PhotoAnalysis
   const interaction = await getGeminiClient().interactions.create({
     model: process.env.GEMMA_VISION_MODEL || "gemma-4-26b-a4b-it",
     system_instruction:
-      "Analiza la imagen de comida. Identifica alimentos visibles y estima gramos. No calcules calorias ni macros. Si hay aceites, salsas o ingredientes ocultos, usa warnings. Devuelve solo JSON valido.",
+      "Analiza la imagen de comida. Identifica alimentos visibles, estima gramos comestibles y aporta una base nutricional razonable por 100 g para cada alimento. No devuelvas calorias totales: el servidor multiplicara por gramos. Si hay aceites, salsas, frituras o ingredientes ocultos, usa warnings. Devuelve solo JSON valido.",
     input: [
       {
         type: "text",
-        text: "Identifica cada alimento visible, estima gramos y confianza. Usa nombres en espanol.",
+        text: "Identifica cada alimento visible por separado, estima gramos, kcal/proteina/carbohidratos/grasa por 100 g y confianza. Usa nombres en espanol.",
       },
       {
         type: "image",
