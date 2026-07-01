@@ -37,5 +37,6 @@ describe("Supabase migration", () => {
     expect(migration).not.toContain("insert into public.foods");
     expect(allMigrations).toContain("delete from public.foods");
     expect(allMigrations).toContain("check (source <> 'seed')");
+    expect(allMigrations).toContain("curated_generic");
   });
 });

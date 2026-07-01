@@ -71,11 +71,11 @@ export async function fetchOpenFoodFactsProduct(barcode: string) {
   const response = await fetch(
     `https://world.openfoodfacts.org/api/v3/product/${encodeURIComponent(barcode)}.json`,
     {
+      cache: "no-store",
       headers: {
         Accept: "application/json",
         "User-Agent": userAgent,
       },
-      next: { revalidate: 60 * 60 * 24 },
     },
   );
 

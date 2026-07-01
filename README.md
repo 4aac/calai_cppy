@@ -32,7 +32,7 @@ OPEN_FOOD_FACTS_USER_AGENT=CalAI Copy MVP - contact: you@example.com
 3. Habilita email/password en Auth.
 4. Copia URL, publishable key y service role key al `.env` y a Vercel.
 
-Las migraciones crean `profiles`, `foods`, `branded_products`, `meals`, `meal_items`, `user_corrections` y `scan_history`, activan RLS y eliminan cualquier alimento semilla. `foods` queda reservado para alimentos reales curados/importados; `branded_products` se rellena desde Open Food Facts.
+Las migraciones crean `profiles`, `foods`, `branded_products`, `meals`, `meal_items`, `user_corrections` y `scan_history`, activan RLS y eliminan cualquier alimento semilla. `foods` queda reservado para alimentos reales curados/importados; la migracion `003_curated_real_food_catalog.sql` carga un catalogo generico curado para calcular fotos sin depender de datos del usuario. `branded_products` se rellena desde Open Food Facts.
 
 ## Desarrollo
 

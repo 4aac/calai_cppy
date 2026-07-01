@@ -8,9 +8,9 @@ describe("food search helpers", () => {
     expect(sanitizeFoodSearchQuery("arroz%_,name.not.is.null")).toBe("arroz name not is null");
   });
 
-  it("preserves unicode letters for Spanish food names", () => {
+  it("normalizes Spanish accents for database lookup", () => {
     const spanishFood = "pi\u00f1a con lim\u00f3n";
 
-    expect(sanitizeFoodSearchQuery(spanishFood)).toBe(spanishFood);
+    expect(sanitizeFoodSearchQuery(spanishFood)).toBe("pina con limon");
   });
 });

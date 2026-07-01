@@ -2,6 +2,8 @@ import type { FoodRecord } from "@/lib/types";
 
 export function sanitizeFoodSearchQuery(query: string) {
   return query
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
     .replace(/[^\p{L}\p{N}\s-]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
