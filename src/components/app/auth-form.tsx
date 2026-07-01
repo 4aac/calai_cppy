@@ -35,9 +35,15 @@ export function AuthForm() {
 
     setPending(false);
 
+    const payload = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
       setError(payload.error ?? "No se pudo iniciar sesion");
+      return;
+    }
+
+    if (mode === "signup" && payload.needsConfirmation) {
+      setError("Cuenta creada. Revisa tu email para confirmar el acceso y luego inicia sesion.");
       return;
     }
 

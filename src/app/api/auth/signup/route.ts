@@ -18,10 +18,15 @@ export async function POST(request: Request) {
     return Response.json({ error: error?.message ?? "Signup failed" }, { status: 400 });
   }
 
-  await supabase.from("profiles").upsert({
-    id: data.user.id,
-    email: data.user.email ?? null,
-  });
+  if (data.session) {
+    await supabase.from("profiles").upsert({
+      id: data.user.id,
+      email: data.user.email ?? null,
+    });
+  }
 
-  return Response.json({ user: { id: data.user.id, email: data.user.email } });
+  return Response.json({
+    user: { id: data.user.id, email: data.user.email },
+    needsConfirmation: !data.session,
+  });
 }

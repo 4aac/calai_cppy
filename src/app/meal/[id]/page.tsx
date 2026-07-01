@@ -1,14 +1,23 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { MobileShell } from "@/components/app/mobile-shell";
 import { demoSummary } from "@/lib/sample-data";
 import { protectPage } from "@/lib/supabase/page-auth";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import type { MealItemDraft, MealType } from "@/lib/types";
 
 export default async function MealPage({ params }: { params: Promise<{ id: string }> }) {
-  await protectPage();
+  const user = await protectPage();
 
   const { id } = await params;
-  const meal = demoSummary.meals.find((item) => item.id === id) ?? demoSummary.meals[1];
+  const meal = user && hasSupabaseEnv()
+    ? await getUserMeal(id, user.id)
+    : demoSummary.meals.find((item) => item.id === id) ?? demoSummary.meals[1];
+
+  if (!meal) {
+    notFound();
+  }
 
   return (
     <MobileShell>
@@ -37,4 +46,57 @@ export default async function MealPage({ params }: { params: Promise<{ id: strin
       </div>
     </MobileShell>
   );
+}
+
+async function getUserMeal(id: string, userId: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data: meal, error } = await supabase
+    .from("meals")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!meal) {
+    return null;
+  }
+
+  const { data: items, error: itemsError } = await supabase
+    .from("meal_items")
+    .select("*")
+    .eq("meal_id", meal.id)
+    .order("created_at", { ascending: true });
+
+  if (itemsError) {
+    throw new Error(itemsError.message);
+  }
+
+  return {
+    id: meal.id,
+    mealType: meal.meal_type as MealType,
+    title: meal.title,
+    total: {
+      kcal: meal.total_kcal,
+      protein: meal.total_protein_g,
+      carbs: meal.total_carbs_g,
+      fat: meal.total_fat_g,
+    },
+    items: (items ?? []).map((item): MealItemDraft => ({
+      id: item.id,
+      foodId: item.food_id,
+      productId: item.product_id,
+      name: item.name,
+      grams: item.grams,
+      kcal: item.kcal,
+      protein: item.protein_g,
+      carbs: item.carbs_g,
+      fat: item.fat_g,
+      confidence: item.confidence as MealItemDraft["confidence"],
+      source: item.source as MealItemDraft["source"],
+    })),
+  };
 }

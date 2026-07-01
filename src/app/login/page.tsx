@@ -1,7 +1,18 @@
 import { AuthForm } from "@/components/app/auth-form";
 import { MobileShell } from "@/components/app/mobile-shell";
+import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  if (hasSupabaseEnv()) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+
+    if (data.user) {
+      redirect("/");
+    }
+  }
+
   return (
     <MobileShell showNav={false}>
       <div className="flex min-h-[calc(100dvh-2.5rem)] flex-col justify-center">

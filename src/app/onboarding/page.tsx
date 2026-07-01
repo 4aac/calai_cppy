@@ -1,9 +1,10 @@
+import { AccountPanel } from "@/components/app/account-panel";
 import { MobileShell } from "@/components/app/mobile-shell";
 import { OnboardingForm } from "@/components/app/onboarding-form";
 import { protectPage } from "@/lib/supabase/page-auth";
 
 export default async function OnboardingPage() {
-  await protectPage();
+  const user = await protectPage();
 
   return (
     <MobileShell>
@@ -15,6 +16,7 @@ export default async function OnboardingPage() {
             Ajusta lo minimo para calcular calorias y macros diarios.
           </p>
         </header>
+        <AccountPanel email={user?.email} />
         <OnboardingForm />
       </div>
     </MobileShell>

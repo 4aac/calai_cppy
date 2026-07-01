@@ -18,5 +18,10 @@ export async function POST(request: Request) {
     return Response.json({ error: error?.message ?? "Login failed" }, { status: 401 });
   }
 
+  await supabase.from("profiles").upsert({
+    id: data.user.id,
+    email: data.user.email ?? null,
+  });
+
   return Response.json({ user: { id: data.user.id, email: data.user.email } });
 }
