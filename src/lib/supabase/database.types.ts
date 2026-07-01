@@ -28,6 +28,7 @@ export interface Database {
         };
         Insert: Partial<Database["public"]["Tables"]["profiles"]["Row"]> & { id: string };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>;
+        Relationships: [];
       };
       foods: {
         Row: {
@@ -52,6 +53,7 @@ export interface Database {
           fat_per_100g: number;
         };
         Update: Partial<Database["public"]["Tables"]["foods"]["Row"]>;
+        Relationships: [];
       };
       branded_products: {
         Row: {
@@ -78,6 +80,7 @@ export interface Database {
           fat_per_100g: number;
         };
         Update: Partial<Database["public"]["Tables"]["branded_products"]["Row"]>;
+        Relationships: [];
       };
       meals: {
         Row: {
@@ -99,6 +102,7 @@ export interface Database {
           date: string;
         };
         Update: Partial<Database["public"]["Tables"]["meals"]["Row"]>;
+        Relationships: [];
       };
       meal_items: {
         Row: {
@@ -128,6 +132,7 @@ export interface Database {
           source: string;
         };
         Update: Partial<Database["public"]["Tables"]["meal_items"]["Row"]>;
+        Relationships: [];
       };
       user_corrections: {
         Row: {
@@ -147,7 +152,12 @@ export interface Database {
           corrected_grams: number;
         };
         Update: Partial<Database["public"]["Tables"]["user_corrections"]["Row"]>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

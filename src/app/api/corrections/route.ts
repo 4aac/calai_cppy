@@ -1,5 +1,6 @@
 import { correctionSchema } from "@/lib/schemas/api";
 import { requireUser } from "@/lib/supabase/auth";
+import type { Json } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     .insert({
       user_id: auth.user.id,
       meal_item_id: body.data.mealItemId ?? null,
-      original_prediction: body.data.originalPrediction,
+      original_prediction: body.data.originalPrediction as Json,
       corrected_food: body.data.correctedFood,
       corrected_grams: body.data.correctedGrams,
       photo_id: body.data.photoId ?? null,

@@ -35,6 +35,11 @@ export function CodeScanner() {
   }, []);
 
   async function startCamera() {
+    if (!videoRef.current) {
+      setStatus("La camara no esta lista");
+      return;
+    }
+
     setStatus("Abriendo camara");
     const reader = new BrowserMultiFormatReader();
     controlsRef.current = await reader.decodeFromVideoDevice(
